@@ -13,7 +13,7 @@ while true; do
   # Realiza limpeza de cargas antigas
   cat scripts/delete-old-data.sh | docker exec -i namenode bash
 
-  # Realiza limpeza de cargas antigas
+  # Realiza limpeza de backups antigos
   cat scripts/delete-old-backup.sh | docker exec -i namenode bash
 
   sleep 10
