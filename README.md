@@ -77,7 +77,7 @@ Utilizamos como exemplo arquivos em CSV de cotações de moedas do banco central
 
 O script *job-backup.sh* realiza um backup do último dataset baixado e copia para o diretório backup fora do HDFS.
 
-O script *delete-old-data.sh* mantém somente as últimas 10 cargas de datasets. Em um job no mundo real, poderíamos manter por exemplo, os últimos 12 meses de carga ou mais, dependendo da necessidade do negócio.
+O script *delete-old-data.sh* mantém somente as últimas 10 cargas de datasets no HDFS. Em um job no mundo real, poderíamos manter por exemplo, os últimos 12 meses de carga ou mais, dependendo da necessidade do negócio.
 
 O script *delete-old-backup.sh* mantém somente os últimos 7 backups. Em um job no mundo real, poderíamos manter por exemplo, os últimos 30 dias ou mais, dependendo do tamanho do storage e da necessidade de negócio.
 
@@ -128,3 +128,9 @@ Depois de executar a simulação, a estrutura de arquivos no HDFS e no namenode 
 
 
 No mundo real poderíamos criar mais quebras de diretório para facilitar a organização dos arquivos. Por exemplo, por ano / mês / dia. Neste exemplo, utilizamos HORA-MINUTOS-SEGUNDOS no final do nome para facilitar a demonstração.
+
+É possível checar a criação dos arquivos de dataset dentro do ambiente HDFS acessando o endereço `http://localhost:50070` no navegador.
+
+Clique *Utilities > Browser the file system* e depois selecione o diretório *mba-datasets*:
+
+![imagem exemplificando a lista de arquivos](/images/sqoop.jpg)
