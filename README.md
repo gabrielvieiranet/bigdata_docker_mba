@@ -1,164 +1,130 @@
-
 # BIG DATA ECOSYSTEM COM DOCKER
 
-Ambiente para estudo dos principais frameworks big data em docker.
-<br> Esse setup vai criar dockers com os frameworks HDFS, HBase, Hive, Presto, Spark, Jupyter, Hue, Mongodb, Metabase, Nifi, kafka, Mysql e Zookeeper com a seguinte arquitetura:
-<br>  
+## OBJETIVO
 
-![Ecossistema](ecosystem.jpeg)
+Este repositório tem como objetivo exercitar atividades relacionadas à aula sobre Hadoop realizada em sala de aula durante o MBA de Engenharia de Dados, disciplina Distributed Data Processing & Storage na FIAP em 2023.
 
-## SOFTWARES NECESSÁRIOS
-#### Para a criação e uso do ambiente vamos utilizar o git e o Docker 
-   * Instalação do Docker Desktop no Windows [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows) ou o docker no [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
-   *  [Instalação do git](https://git-scm.com/book/pt-br/v2/Come%C3%A7ando-Instalando-o-Git)
-   
-## SETUP
-*OBS: Esse passo deve ser realizado apena uma vez. Após o ambiente criado, utilizar o docker-compose para iniciar os containers como mostrado no tópico INICIANDO O AMBIENTE*
+## PROPOSTA
 
-#### Criação do diretório docker:
-*OBS: Criar um diretório chamado docker*
+Ele é um fork do repositório do Fabio Jardim --> [bigdata_docker](https://github.com/fabiogjardim/bigdata_docker)
 
-   *  Sugestão no Windows:
-      *  Criar na raiz do seu drive o diretório docker
-         ex: C:\docker
-          
-   * Sugestão no Linux:
-      * Criar o diretório na home do usuário
-        ex: /home/user/docker
+Pegamos o ambiente Hadoop em Docker montado pelo Fabio e criamos uma simulação de rotina de ETL + Backup utilizando Shell scripts.
 
-#### Em um terminal/DOS, dentro diretório docker, realizar o clone do projeto no github
-          git clone https://github.com/fabiogjardim/bigdata_docker.git
+Para ter mais detalhes sobre configurações do ambiente e comandos específicos, consulte o repositório original.
 
-#### No diretório bigdata_docker vai existir os seguintes objetos
-![ls](ls.JPG)
+A ideia do trabalho é seguir estes passos:
 
-   
-## INICIANDO O AMBIENTE
-   
-  *No Windows abrir PowerShell, do Linux um terminal*
+* Baixar um dataset público da internet para dentro do HDFS
+* criar uma estrutura de diretórios no HDFS pensando em uma periodicidade e diversas versões desse dataset
+* carregar de forma semi-automatizada (script) o dataset na estrutura definida
+* definir uma estratégia de backup
+* criar script para realizar o backup
+* documentar todas as estratégias adotadas
 
-### No terminal, no diretorio bigdata_docker, executar o docker-compose
-          docker-compose up -d        
+## COMO RODAR A SIMULAÇÃO
 
-### Verificar imagens e containers
- 
-         docker image ls
+Antes de tudo, você precisa ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e inicializado.
 
-![docker image ls](docker_image_ls.JPG)
+Para iniciar o ambiente Hadoop em Docker execute o comando abaixo, de preferência em um terminal shell:
 
-         docker container ls
+```shell
+docker compose up -d
+```
 
-![docker container](docker_container_ls.JPG)
+Execute o script abaixo para rodar a simulação:
 
-## SOLUCIONANDO PROBLEMAS 
-   
-  *No Windows abrir o Docker Quickstart Terminal*
+```shell
+. ./init.sh
+```
 
-### Parar um containers
-         docker stop [nome do container]      
+Para encerrar a simulação utilize a combinação de teclas `CTRL+C` e se quiser encerrar o ambiente Hadoop em Docker basta executar este comando:
 
-### Parar todos containers
-         docker stop $(docker ps -a -q)
-  
-### Remover um container
-         docker rm [nome do container]
+```shell
+docker compose down
+```
 
-### Remover todos containers
-         docker rm $(docker ps -a -q)         
+## NOSSA IDEIA
 
-### Dados do containers
-         docker container inspect [nome do container]
+Separamos os scripts da simulação dentro do diretório */scripts*.
 
-### Iniciar um container
-         docker-compose up -d [nome do container]
+O script *init.sh* que fica no diretório raiz, orquestra a execução dos scripts de carga dentro do container *namenode*. Ele executa a cada 10 segundos para efeito de demonstração.
 
-### Iniciar todos os containers
-         docker-compose up -d 
+Em uma aplicação no mundo real, poderíamos pegar o conteúdo do script *init.sh* e adaptar para rodar diariamente em um *cronjob* dentro do servidor do namenode.
 
-### Acessar log do container
-         docker container logs [nome do container] 
+### ESTRUTURA DE DIRETÓRIOS
 
-## Acesso WebUI dos Frameworks
- 
-* HDFS *http://localhost:50070*
-* Presto *http://localhost:8080*
-* Hbase *http://localhost:16010/master-status*
-* Mongo Express *http://localhost:8081*
-* Kafka Manager *http://localhost:9000*
-* Metabase *http://localhost:3000*
-* Nifi *http://localhost:9090*
-* Jupyter Spark *http://localhost:8889*
-* Hue *http://localhost:8888*
-* Spark *http://localhost:4040*
+Primeiro executamos o *config.sh* para criar a estrutura de diretórios.
 
-## Acesso por shell
+Criamos um diretório dentro da estrutura HDFS para armazenar as cargas de datasets:
 
-   ##### HDFS
+    ├── HDFS
+    │   └── mba-datasets
 
-          docker exec -it datanode bash
+E uma estrutura dentro do "servidor" do namenode, neste exemplo para criar uma área de staging, onde utilizaremos como área temporária para baixar o dataset e uma área de backups fora do ambiente HDFS.
 
-   ##### HBase
+    ├── namenode
+    │   └── mba-datasets
+    │       ├── staging
+    │       └── backup
 
-          docker exec -it hbase-master bash
+### JOBS
 
-   ##### Sqoop
+Depois executamos em looping a cada 10 segundos os scripts de carga, backup e deleção de arquivos antigos.
 
-          docker exec -it datanode bash
-        
-   ##### Kafka
+O script *job-data.sh* é responsável por baixar o dataset e gravar no HDFS.
 
-          docker exec -it kafka bash
+Utilizamos como exemplo arquivos em CSV de cotações de moedas do banco central em D-1 (pra garantir que o arquivo exista).
 
-## Acesso JDBC
+O script *job-backup.sh* realiza um backup do último dataset baixado e copia para o diretório backup fora do HDFS.
 
-   ##### MySQL
-          jdbc:mysql://database/employees
+O script *delete-old-data.sh* mantém somente as últimas 10 cargas de datasets. Em um job no mundo real, poderíamos manter por exemplo, os últimos 12 meses de carga ou mais, dependendo da necessidade do negócio.
 
-   ##### Hive
+O script *delete-old-backup.sh* mantém somente os últimos 7 backups. Em um job no mundo real, poderíamos manter por exemplo, os últimos 30 dias ou mais, dependendo do tamanho do storage e da necessidade de negócio.
 
-          jdbc:hive2://hive-server:10000/default
+Depois de executar a simulação, a estrutura de arquivos no HDFS e no namenode deve ficar por exemplo desta forma:
 
-   ##### Presto
+    ├── HDFS
+    │   └── mba-datasets
+    │       ├── 20230428-132720
+    │       │   └── dataset.csv
+    │       ├── 20230428-132801
+    │       │   └── dataset.csv
+    │       ├── 20230428-132741
+    │       │   └── dataset.csv
+    │       ├── 20230428-132822
+    │       │   └── dataset.csv
+    │       ├── 20230428-132843
+    │       │   └── dataset.csv
+    │       ├── 20230428-132903
+    │       │   └── dataset.csv
+    │       ├── 20230428-132924
+    │       │   └── dataset.csv
+    │       ├── 20230428-132944
+    │       │   └── dataset.csv
+    │       ├── 20230428-133005
+    │       │   └── dataset.csv
+    │       └── 20230428-133026
+    │           └── dataset.csv
 
-          jdbc:presto://presto:8080/hive/default
 
-## Usuários e senhas
+    ├── namenode
+    │   └── mba-datasets
+    │       ├── staging
+    │       └── backup
+    │           ├── 20230428-132822
+    │           │   └── dataset.csv
+    │           ├── 20230428-132843
+    │           │   └── dataset.csv
+    │           ├── 20230428-132903
+    │           │   └── dataset.csv
+    │           ├── 20230428-132924
+    │           │   └── dataset.csv
+    │           ├── 20230428-132944
+    │           │   └── dataset.csv
+    │           ├── 20230428-133005
+    │           │   └── dataset.csv
+    │           └── 20230428-133026
+    │               └── dataset.csv
 
-   ##### Hue
-    Usuário: admin
-    Senha: admin
 
-   ##### Metabase
-    Usuário: bigdata@class.com
-    Senha: bigdata123 
-
-   ##### MySQL
-    Usuário: root
-    Senha: secret
-   
-   ##### MongoDB
-    Usuário: root
-    Senha: root
-    Authentication Database: admin
-
-## Imagens   
-
-[Docker Hub](https://hub.docker.com/u/fjardim)
-
-## Documentação Oficial
-
-* https://zookeeper.apache.org/
-* https://kafka.apache.org/
-* https://nifi.apache.org/
-* https://prestodb.io/
-* https://spark.apache.org/
-* https://www.mongodb.com/
-* https://www.metabase.com/
-* https://jupyter.org/
-* https://hbase.apache.org/
-* https://sqoop.apache.org/
-* https://hadoop.apache.org/
-* https://hive.apache.org/
-* https://gethue.com/
-* https://github.com/yahoo/CMAK
-* https://www.docker.com/
+No mundo real poderíamos criar mais quebras de diretório para facilitar a organização dos arquivos. Por exemplo, por ano / mês / dia. Neste exemplo, utilizamos HORA-MINUTOS-SEGUNDOS no final do nome para facilitar a demonstração.
